@@ -75,6 +75,8 @@ export interface Database {
           puntos_obtenidos: number
           tipo_acierto: string | null
           comentario: string | null
+          goleadores: Json | null
+          confirmada: boolean
           created_at: string
           updated_at: string
         }

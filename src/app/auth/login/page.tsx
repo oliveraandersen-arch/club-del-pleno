@@ -62,9 +62,9 @@ export default function LoginPage() {
         <div
           className="rounded-3xl p-8"
           style={{
-            background: 'rgba(15, 30, 56, 0.8)',
-            border: '1px solid #D4C8B8',
-            backdropFilter: 'blur(20px)',
+            background: '#FFFFFF',
+            border: '1px solid #E5DDD0',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
           }}
         >
           <form onSubmit={handleLogin} className="space-y-5">

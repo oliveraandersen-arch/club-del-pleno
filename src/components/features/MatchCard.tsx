@@ -1,7 +1,8 @@
 'use client'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import { Lock, Clock, MapPin, Star } from 'lucide-react'
+import { Lock, Clock, MapPin, Star, Users, CheckCircle } from 'lucide-react'
+import { GoalScorerModal } from './GoalScorerModal'
 import { format, formatDistanceToNow, isPast } from 'date-fns'
 import { es } from 'date-fns/locale'
 import type { PartidoConEquipos, Prediccion } from '@/types/database'
@@ -11,15 +12,17 @@ interface Props {
   partido: PartidoConEquipos
   prediccion?: Prediccion | null
   onPredict?: (gLocal: number, gVisitante: number) => Promise<void>
+  onSaveGoleadores?: (goleadores: { local: { jugador: string; minuto: number | string }[]; visitante: { jugador: string; minuto: number | string }[] }) => Promise<void>
   showResult?: boolean
   compact?: boolean
 }
 
-export function MatchCard({ partido, prediccion, onPredict, showResult, compact }: Props) {
+export function MatchCard({ partido, prediccion, onPredict, onSaveGoleadores, showResult, compact }: Props) {
   const [golLocal, setGolLocal] = useState(prediccion?.goles_local ?? 0)
   const [golVisitante, setGolVisitante] = useState(prediccion?.goles_visitante ?? 0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showGoleadores, setShowGoleadores] = useState(false)
 
   const isLocked = partido.estado !== 'programado' || isPast(new Date(partido.fecha))
   const isFinalizado = partido.estado === 'finalizado'
@@ -225,46 +228,75 @@ export function MatchCard({ partido, prediccion, onPredict, showResult, compact 
 
       {/* Save button */}
       {onPredict && !isLocked && (
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleSave}
-          disabled={saving}
-          className="mt-4 w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-          style={{
-            background: saved
-              ? 'rgba(34,197,94,0.2)'
-              : 'rgba(245,200,66,0.1)',
-            border: saved
-              ? '1px solid rgba(34,197,94,0.3)'
-              : '1px solid rgba(245,200,66,0.2)',
-            color: saved ? '#86EFAC' : '#F5C842',
-          }}
-        >
-          {saving ? (
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+        <div className="mt-4 flex gap-2">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+            style={{
+              background: saved ? '#F0FDF4' : '#FFFBEB',
+              border: saved ? '1px solid #86EFAC' : '1px solid rgba(184,134,11,0.3)',
+              color: saved ? '#16A34A' : '#B8860B',
+            }}
+          >
+            {saving ? (
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>⚽</motion.div>
+            ) : saved ? (
+              <><CheckCircle className="w-4 h-4" /> Guardado</>
+            ) : (
+              <><Star className="w-4 h-4" /> Guardar</>
+            )}
+          </motion.button>
+
+          {/* Botón goleadores — solo aparece si ya hay predicción y hay goles */}
+          {prediccion && ((prediccion.goles_local ?? 0) + (prediccion.goles_visitante ?? 0) > 0) && onSaveGoleadores && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowGoleadores(true)}
+              className="px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 transition-all"
+              style={{
+                background: (prediccion.goleadores as { local?: unknown[] } | null)?.local?.length ? '#F0FDF4' : '#F5F0E8',
+                border: (prediccion.goleadores as { local?: unknown[] } | null)?.local?.length ? '1px solid #86EFAC' : '1px solid #E5DDD0',
+                color: (prediccion.goleadores as { local?: unknown[] } | null)?.local?.length ? '#16A34A' : '#6B6260',
+              }}
+              title="Agregar goleadores"
+            >
+              <Users className="w-4 h-4" />
               ⚽
-            </motion.div>
-          ) : saved ? (
-            <>✅ Predicción guardada</>
-          ) : (
-            <><Star className="w-4 h-4" /> Guardar predicción</>
+            </motion.button>
           )}
-        </motion.button>
+        </div>
       )}
 
-      {/* Locked overlay info */}
+      {/* Locked info */}
       {isLocked && !isFinalizado && (
-        <div className="mt-3 text-center text-xs text-gray-600 flex items-center justify-center gap-1">
-          <Lock className="w-3 h-3" /> Predicciones cerradas — partido en curso
+        <div className="mt-3 text-center text-xs flex items-center justify-center gap-1" style={{ color: '#9A9490' }}>
+          <Lock className="w-3 h-3" /> Predicciones cerradas
         </div>
       )}
 
-      {prediccion && !isFinalizado && (
-        <div className="mt-2 text-center text-xs text-gray-500">
-          Tu predicción: <span className="text-gray-300 font-semibold">{prediccion.goles_local} - {prediccion.goles_visitante}</span>
+      {/* Predicción confirmada info */}
+      {prediccion && !isLocked && (
+        <div className="mt-1 text-center text-xs" style={{ color: '#9A9490' }}>
+          Tu predicción: <span className="font-bold" style={{ color: '#B8860B' }}>{prediccion.goles_local} - {prediccion.goles_visitante}</span>
+          {(prediccion.confirmada) && <span className="ml-2 text-green-600 font-semibold">✓ Confirmada</span>}
         </div>
       )}
+
+      {/* Goleadores modal */}
+      <AnimatePresence>
+        {showGoleadores && prediccion && onSaveGoleadores && (
+          <GoalScorerModal
+            partido={partido}
+            prediccion={prediccion}
+            onSave={onSaveGoleadores}
+            onClose={() => setShowGoleadores(false)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

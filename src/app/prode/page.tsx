@@ -106,6 +106,28 @@ export default function ProdePage() {
     }
   }
 
+  async function handleSaveGoleadores(
+    partidoId: string,
+    goleadores: { local: { jugador: string; minuto: number | string }[]; visitante: { jugador: string; minuto: number | string }[] }
+  ) {
+    const existing = predicciones[partidoId]
+    if (!existing) return
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from('predicciones') as any)
+        .update({ goleadores, confirmada: true, updated_at: new Date().toISOString() })
+        .eq('id', existing.id)
+
+      setPredicciones(p => ({
+        ...p,
+        [partidoId]: { ...existing, goleadores: goleadores as unknown as null, confirmada: true },
+      }))
+      toast.success('¡Goleadores confirmados!', { icon: '⚽' })
+    } catch {
+      toast.error('Error al guardar goleadores')
+    }
+  }
+
   const filteredPartidos = faseFilter === 'todos'
     ? partidos
     : partidos.filter((p) => p.fase === faseFilter)
@@ -203,6 +225,7 @@ export default function ProdePage() {
                 partido={partido}
                 prediccion={predicciones[partido.id] ?? null}
                 onPredict={(gL, gV) => handlePredict(partido.id, gL, gV)}
+                onSaveGoleadores={(g) => handleSaveGoleadores(partido.id, g)}
                 showResult
               />
               {/* Community prediction stats */}

@@ -50,7 +50,7 @@ export default function DashboardPage() {
           equipo_local:equipos!partidos_equipo_local_id_fkey(*),
           equipo_visitante:equipos!partidos_equipo_visitante_id_fkey(*)
         `)
-        .in('estado', ['programado', 'en_curso'])
+        .eq('estado', 'programado')
         .order('fecha', { ascending: true })
         .limit(6)
 

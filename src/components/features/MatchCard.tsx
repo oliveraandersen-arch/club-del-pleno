@@ -60,9 +60,9 @@ export function MatchCard({ partido, prediccion, onPredict, showResult, compact 
           animate={{ scale: 1 }}
           className="score-btn"
           style={{
-            background: isLocked ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.07)',
-            borderColor: isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
-            color: isFinalizado ? '#9CA3AF' : 'white',
+            background: isLocked ? '#F5F0E8' : '#FFFFFF',
+            borderColor: isLocked ? '#E5DDD0' : '#D4C8B8',
+            color: '#1A1A1A',
             fontSize: compact ? '1.25rem' : undefined,
             width: compact ? 56 : undefined,
             height: compact ? 56 : undefined,
